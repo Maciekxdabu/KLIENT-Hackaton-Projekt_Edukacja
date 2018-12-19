@@ -89,7 +89,7 @@ int main()
 
     Przeszkoda * przeszkoda[8];
 
-    serwer.setBlocking(false);
+    //serwer.setBlocking(false);
 
     Wskaznik myszka("img/celownik.png");
     okno.setMouseCursorVisible(false);
