@@ -40,14 +40,14 @@ void connectTCP()
 
 void odbierz()
 {
-    sf::Packet paczka;
-
     while (polaczenie == true)
     {
         /*for (int i=0; i<ilosc_graczy; i++)
         {
             ;
         }*/
+
+        sf::Packet paczka;
 
         if (serwer.receive(paczka) == sf::Socket::Done)
         {
@@ -66,12 +66,12 @@ void odbierz()
 
 void wyslij()
 {
-    sf::Packet paczka;
-
     while (polaczenie == true)
     {
         if (wysylaj == true)
         {
+            sf::Packet paczka;
+
             for (int i=0; i<4; i++)
                 paczka << klawisze[i];
 
