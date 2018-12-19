@@ -130,25 +130,33 @@ int main()
             }
         }
 
-        for (int i=0; i<4; i++)
-            klawisze[i] = false;
+        //for (int i=0; i<4; i++)
+            //klawisze[i] = false;
 
         if (sf::Keyboard::isKeyPressed(sf::Keyboard::W))
         {
             klawisze[0] = true;
         }
+        else
+            klawisze[0] = false;
         if (sf::Keyboard::isKeyPressed(sf::Keyboard::S))
         {
             klawisze[2] = true;
         }
+        else
+            klawisze[2] = false;
         if (sf::Keyboard::isKeyPressed(sf::Keyboard::D))
         {
             klawisze[1] = true;
         }
+        else
+            klawisze[1] = false;
         if (sf::Keyboard::isKeyPressed(sf::Keyboard::A))
         {
             klawisze[3] = true;
         }
+        else
+            klawisze[3] = false;
 
         myszka.setPosition(sf::Mouse::getPosition(okno).x,sf::Mouse::getPosition(okno).y);
 
