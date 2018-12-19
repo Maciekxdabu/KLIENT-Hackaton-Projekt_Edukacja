@@ -54,12 +54,12 @@ void odbierz()
             float pozX, pozY, obr;
 
             paczka >> pozX >> pozY >> obr;
-            player2.setPosition(pozX,pozY);
-            player2.setRotation(obr);
-
-            paczka >> pozX >> pozY >> obr;
             player1.setPosition(pozX,pozY);
             player1.setRotation(obr);
+
+            paczka >> pozX >> pozY >> obr;
+            player2.setPosition(pozX,pozY);
+            player2.setRotation(obr);
         }
     }
 }
