@@ -75,7 +75,7 @@ void wyslij()
             for (int i=0; i<4; i++)
                 paczka << klawisze[i];
 
-            paczka << player1.getRotation();
+            paczka << player2.getRotation();
 
             if (serwer.send(paczka) == sf::Socket::Done)
                 wysylaj = false;
