@@ -89,7 +89,7 @@ int main()
 
     Przeszkoda * przeszkoda[8];
 
-    serwer.setBlocking(false);
+    //serwer.setBlocking(false);
 
     Wskaznik myszka("img/celownik.png");
     okno.setMouseCursorVisible(false);
@@ -152,8 +152,8 @@ int main()
 
         myszka.setPosition(sf::Mouse::getPosition(okno).x,sf::Mouse::getPosition(okno).y);
 
-        player1.setRotation( atan2(myszka.getObraz().getPosition().y - player1.getPosition().y,
-                                   myszka.getObraz().getPosition().x - player1.getPosition().x )/PI*180 + 90 );
+        player2.setRotation( atan2(myszka.getObraz().getPosition().y - player2.getPosition().y,
+                                   myszka.getObraz().getPosition().x - player2.getPosition().x )/PI*180 + 90 );
 
         wysylaj = true;
 
