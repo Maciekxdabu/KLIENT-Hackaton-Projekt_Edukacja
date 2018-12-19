@@ -16,12 +16,14 @@ int ilosc_graczy;
 
 bool klawisze[4];
 float obrot;
+bool wysylaj=false;
+
 sf::Texture graczT;
 sf::Sprite player1, player2;
 
 void connectTCP()
 {
-    while (serwer.connect("192.168.0.107", 38001) != sf::Socket::Done)
+    while (serwer.connect("192.168.0.107", 38001) != sf::Socket::Done && polaczenie == false)
     {
         cout << "Oczekiwanie na polaczenie z serwerem" << endl;
     }
@@ -40,22 +42,25 @@ void odbierz()
 {
     sf::Packet paczka;
 
-    while (serwer.receive(paczka) == sf::Socket::Done)
+    while (polaczenie == true)
     {
         /*for (int i=0; i<ilosc_graczy; i++)
         {
             ;
         }*/
 
-        float pozX, pozY, obr;
+        if (serwer.receive(paczka) == sf::Socket::Done)
+        {
+            float pozX, pozY, obr;
 
-        paczka >> pozX >> pozY >> obr;
-        player2.setPosition(pozX,pozY);
-        player2.setRotation(obr);
+            paczka >> pozX >> pozY >> obr;
+            player2.setPosition(pozX,pozY);
+            player2.setRotation(obr);
 
-        paczka >> pozX >> pozY >> obr;
-        player1.setPosition(pozX,pozY);
-        player1.setRotation(obr);
+            paczka >> pozX >> pozY >> obr;
+            player1.setPosition(pozX,pozY);
+            player1.setRotation(obr);
+        }
     }
 }
 
@@ -63,10 +68,19 @@ void wyslij()
 {
     sf::Packet paczka;
 
-    for (int i=0; i<4; i++)
-        paczka << klawisze[i];
+    while (polaczenie == true)
+    {
+        if (wysylaj == true)
+        {
+            for (int i=0; i<4; i++)
+                paczka << klawisze[i];
 
-    paczka << player1.getRotation();
+            paczka << player1.getRotation();
+
+            if (serwer.send(paczka) == sf::Socket::Done)
+                wysylaj = false;
+        }
+    }
 }
 
 int main()
@@ -97,6 +111,11 @@ int main()
     przeszkoda[5]->setPosition(705,327);
     przeszkoda[6]->setPosition(377,605);
     przeszkoda[7]->setPosition(50,327);
+
+    connectTCP();
+
+    thread odbior(odbierz);
+    thread wysylka(wyslij);
 
     while (okno.isOpen())
     {
@@ -134,6 +153,7 @@ int main()
         player1.setRotation( atan2(myszka.getObraz().getPosition().y - player1.getPosition().y,
                                    myszka.getObraz().getPosition().x - player1.getPosition().x )/PI*180 + 90 );
 
+        wysylaj = true;
 
         okno.clear(sf::Color::White);
 
@@ -146,6 +166,11 @@ int main()
 
         okno.display();
     }
+
+    polaczenie = false;
+
+    wysylka.join();
+    odbior.join();
 
     return 0;
 }
