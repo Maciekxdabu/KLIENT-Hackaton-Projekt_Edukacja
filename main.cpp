@@ -1,46 +1,65 @@
 #include <SFML/Network.hpp>
 #include <thread>
 #include <iostream>
-#include <cmath>
+#include <fstream>
 
 #include "klasy.h"
 
 using namespace std;
 
-#define PI 3.141592653589
+//#define PI 3.141592653589
+
+sf::RenderWindow okno;
 
 sf::TcpSocket serwer;
 bool polaczenie = false;
+bool zakonczone = false;
 
-int ilosc_graczy;
+sf::Texture graczT;
+int ilosc_graczy=0;
+vector<sf::Sprite*> gracze;
+
+sf::Texture pociskT;
+int pociskow=0;
+//vector<Pocisk*> pociski;
+vector<sf::Sprite*> pociski;
 
 bool klawisze[4];
 float obrot;
 bool wysylaj=false;
 
-sf::Texture graczT;
-sf::Sprite player1, player2;
+bool lewy;
+float cooldown=-1;
+sf::Clock zegar;
+float deltaTime;
+
+//sf::Sprite player1, player2;
+
+fstream plik;
+sf::IpAddress adres;
+
+float Pocisk::R = 500;
 
 void connectTCP()
 {
-    while (serwer.connect("192.168.0.107", 38001) != sf::Socket::Done && polaczenie == false)
+    while (serwer.connect(adres, 38001) != sf::Socket::Done && polaczenie == false && zakonczone == false)
     {
         cout << "Oczekiwanie na polaczenie z serwerem" << endl;
     }
 
-    sf::Packet paczka;
+    /*sf::Packet paczka;
     while (serwer.receive(paczka))
     {
         ;
     }
-    paczka >> ilosc_graczy;
+    paczka >> ilosc_graczy;*/
 
     polaczenie = true;
 }
 
 void odbierz()
 {
-    while (polaczenie == true)
+    while (zakonczone == false)
     {
         /*for (int i=0; i<ilosc_graczy; i++)
         {
@@ -49,33 +68,112 @@ void odbierz()
 
         sf::Packet paczka;
 
-        if (serwer.receive(paczka) == sf::Socket::Done)
+        if (polaczenie == true && serwer.receive(paczka) == sf::Socket::Done)
         {
-            float pozX, pozY, obr;
+            paczka >> ilosc_graczy;
 
-            paczka >> pozX >> pozY >> obr;
+            if (ilosc_graczy != gracze.size())
+            {
+                for (int i=0; i<gracze.size(); i++)
+                    delete gracze[i];
+                gracze.clear();
+
+                float x, y, o;
+                for (int i=0; i<ilosc_graczy; i++)
+                {
+                    sf::Sprite *bufor;
+                    bufor = new sf::Sprite();
+                    paczka >> x >> y >> o;
+
+                    bufor->setTexture(graczT);
+                    bufor->setOrigin(25, 25);
+                    bufor->setPosition(x, y);
+                    bufor->setRotation(o);
+
+                    gracze.push_back(bufor);
+                }
+            }
+            else
+            {
+                float x, y, o;
+                for (int i=0; i<gracze.size(); i++)
+                {
+                    paczka >> x >> y >> o;
+                    gracze[i]->setPosition(x, y);
+                    gracze[i]->setRotation(o);
+                }
+            }
+
+            paczka >> pociskow;
+
+            if (pociskow != pociski.size())
+            {
+                for (int i=0; i<pociski.size(); i++)
+                    delete pociski[i];
+                pociski.clear();
+
+                float x, y, o;
+                for (int i=0; i<pociskow; i++)
+                {
+                    //Pocisk *bufor;
+                    //bufor = new Pocisk(o, sf::Vector2f(x, y));
+                    sf::Sprite *bufor;
+                    bufor = new sf::Sprite();
+                    paczka >> x >> y >> o;
+
+                    bufor->setTexture(pociskT);
+                    bufor->setOrigin(5, 5);
+                    bufor->setPosition(x, y);
+                    bufor->setRotation(o);
+
+                    pociski.push_back(bufor);
+                }
+            }
+            else
+            {
+                float x, y, o;
+                for (int i=0; i<pociski.size(); i++)
+                {
+                    paczka >> x >> y >> o;
+                    pociski[i]->setPosition(x, y);
+                    pociski[i]->setRotation(o);
+                }
+            }
+
+            //float pozX, pozY, obr;
+
+            /*paczka >> pozX >> pozY >> obr;
             player1.setPosition(pozX,pozY);
             player1.setRotation(obr);
 
             paczka >> pozX >> pozY >> obr;
             player2.setPosition(pozX,pozY);
-            player2.setRotation(obr);
+            player2.setRotation(obr);*/
         }
     }
 }
 
 void wyslij()
 {
-    while (polaczenie == true)
+    while (zakonczone == false)
     {
-        if (wysylaj == true)
+        if (wysylaj == true && polaczenie == true)
         {
             sf::Packet paczka;
 
             for (int i=0; i<4; i++)
                 paczka << klawisze[i];
 
-            paczka << player2.getRotation();
+            //paczka << player2.getRotation();
+            paczka << sf::Mouse::getPosition(okno).x << sf::Mouse::getPosition(okno).y;
+
+            paczka << lewy;
+
+            if (lewy == true)
+            {
+                cooldown = 1;
+                lewy = false;
+            }
 
             if (serwer.send(paczka) == sf::Socket::Done)
                 wysylaj = false;
@@ -85,7 +183,13 @@ void wyslij()
 
 int main()
 {
-    sf::RenderWindow okno(sf::VideoMode(800, 700, 32), "Projekt Edukacja KLIENT");
+    plik.open("adres.txt", ios::in);
+
+    plik >> adres;
+
+    plik.close();
+
+    okno.create(sf::VideoMode(800, 700, 32), "Projekt Edukacja KLIENT");
 
     Przeszkoda * przeszkoda[8];
 
@@ -95,12 +199,13 @@ int main()
     okno.setMouseCursorVisible(false);
 
     graczT.loadFromFile("img/gracz.png");
-    player1.setTexture(graczT);
+    pociskT.loadFromFile("img/pocisk.png");
+    /*player1.setTexture(graczT);
     player1.setPosition(200, 200);
     player1.setOrigin(25,25);
     player2.setTexture(graczT);
     player2.setPosition(250, 250);
-    player2.setOrigin(25,25);
+    player2.setOrigin(25,25);*/
 
     for (int i=0; i<8; i++)
         przeszkoda[i] = new Przeszkoda("img/przeszkoda.png");
@@ -114,10 +219,12 @@ int main()
     przeszkoda[6]->setPosition(377,605);
     przeszkoda[7]->setPosition(50,327);
 
-    connectTCP();
+    thread polacz(connectTCP);
 
     thread odbior(odbierz);
     thread wysylka(wyslij);
+
+    zegar.restart();
 
     while (okno.isOpen())
     {
@@ -127,6 +234,14 @@ int main()
             if (zdarzenie.type == sf::Event::Closed)
             {
                 okno.close();
+            }
+
+            if (zdarzenie.type == sf::Event::MouseButtonPressed)
+            {
+                if (zdarzenie.mouseButton.button == sf::Mouse::Left && cooldown <= 0)
+                {
+                    lewy = true;
+                }
             }
         }
 
@@ -160,25 +275,39 @@ int main()
 
         myszka.setPosition(sf::Mouse::getPosition(okno).x,sf::Mouse::getPosition(okno).y);
 
-        player2.setRotation( atan2(myszka.getObraz().getPosition().y - player2.getPosition().y,
-                                   myszka.getObraz().getPosition().x - player2.getPosition().x )/PI*180 + 90 );
+        //player2.setRotation( atan2(myszka.getObraz().getPosition().y - player2.getPosition().y,
+        //                           myszka.getObraz().getPosition().x - player2.getPosition().x )/PI*180 + 90 );
 
         wysylaj = true;
 
         okno.clear(sf::Color::White);
 
-        okno.draw(player1);
-        okno.draw(player2);
-        okno.draw(myszka.getObraz());
+        //okno.draw(player1);
+        //okno.draw(player2);
+
+        for (sf::Sprite *gracz: gracze)
+            okno.draw(*gracz);
+
+        for (sf::Sprite *pocisk: pociski)
+            okno.draw(*pocisk);
 
         for (int i=0; i<8; i++)
             okno.draw(przeszkoda[i]->getObraz());
 
+        okno.draw(myszka.getObraz());
+
         okno.display();
+
+        if (cooldown > 0)
+            cooldown -= deltaTime;
+
+        deltaTime = zegar.restart().asSeconds();
     }
 
     polaczenie = false;
+    zakonczone = true;
 
+    polacz.join();
     wysylka.join();
     odbior.join();
 
