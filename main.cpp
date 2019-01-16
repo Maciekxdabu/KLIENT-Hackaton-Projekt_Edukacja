@@ -171,7 +171,7 @@ void wyslij()
 
             if (lewy == true)
             {
-                cooldown = 1;
+                cooldown = 0.1;
                 lewy = false;
             }
 
@@ -285,11 +285,16 @@ int main()
         //okno.draw(player1);
         //okno.draw(player2);
 
-        for (sf::Sprite *gracz: gracze)
+        /*for (sf::Sprite *gracz: gracze)
             okno.draw(*gracz);
 
         for (sf::Sprite *pocisk: pociski)
-            okno.draw(*pocisk);
+            okno.draw(*pocisk);*/
+
+        for (int i=0; i<gracze.size(); i++)
+            okno.draw(*gracze[i]);
+        for (int i=0; i<pociski.size(); i++)
+            okno.draw(*pociski[i]);
 
         for (int i=0; i<8; i++)
             okno.draw(przeszkoda[i]->getObraz());
